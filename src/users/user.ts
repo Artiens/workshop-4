@@ -118,8 +118,13 @@ export async function user(userId: number) {
 }
 
 function selectRandomNodes(nodes: Array<{ nodeId: number; pubKey: string }>, count: number) {
-  const shuffled = [...nodes].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  // Fisher-Yates shuffle implementation
+  const array = [...nodes];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array.slice(0, count);
 }
 
 async function createRandomSymmetricKey(): Promise<webcrypto.CryptoKey> {
