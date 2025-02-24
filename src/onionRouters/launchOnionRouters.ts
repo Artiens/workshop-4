@@ -1,15 +1,20 @@
 import { simpleOnionRouter } from "./simpleOnionRouter";
 
 export async function launchOnionRouters(n: number) {
-  const promises = [];
+  const servers = [];
 
-  // launch a n onion routers
+  // Launch routers sequentially instead of in parallel
   for (let index = 0; index < n; index++) {
-    const newPromise = simpleOnionRouter(index);
-    promises.push(newPromise);
+    try {
+      const server = await simpleOnionRouter(index);
+      servers.push(server);
+      // Add small delay between launches
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error(`Failed to launch onion router ${index}:`, error);
+      throw error;
+    }
   }
-
-  const servers = await Promise.all(promises);
 
   return servers;
 }

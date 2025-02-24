@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
@@ -22,9 +24,17 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", ".vscode", "prisma"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".vscode",
+    "prisma"
+  ]
 }
