@@ -90,55 +90,46 @@ export async function simpleOnionRouter(nodeId: number) {
         return res.status(400).json({ error: "Message required" });
       }
 
-      // Update circuit first
-      lastCircuit = [...circuit, nodeId];
-
+      // Store the received message exactly as is
       lastReceivedEncryptedMessage = message;
 
-      // The first part is the encrypted symmetric key (344 chars for RSA-2048)
+      // Split the message into key and payload parts
       const encryptedSymKey = message.substring(0, 344);
       const encryptedPayload = message.substring(344);
 
-      // Decrypt the symmetric key using node's private key
+      // Decrypt symmetric key and payload
       let symKey: CryptoKey;
       try {
         const symKeyStr = await rsaDecrypt(encryptedSymKey, privateKey);
         symKey = await importSymKey(symKeyStr);
-        console.log(`Decrypted Symmetric Key: ${symKey}`);
       } catch (error) {
         console.error('Error decrypting symmetric key:', error);
         throw new Error('Failed to decrypt symmetric key');
       }
 
-      // Decrypt the payload using the symmetric key
       let decrypted;
       try {
         decrypted = await symDecrypt(symKey, encryptedPayload);
-        console.log(`Decrypted Payload: ${decrypted}`);
       } catch (error) {
         console.error('Error decrypting payload:', error);
         throw new Error('Failed to decrypt payload');
       }
 
-      // Extract destination and remaining message
+      // Process decrypted message
       const destination = parseInt(decrypted.substring(0, 10));
-      if (isNaN(destination)) {
-        throw new Error('Invalid destination port');
-      }
-
-      // Store the destination before forwarding
-      lastMessageDestination = destination;
       const remainingMessage = decrypted.substring(10);
 
       lastReceivedDecryptedMessage = remainingMessage;
+      lastMessageDestination = destination;
+      lastCircuit = [...circuit, nodeId];
 
-      // Forward the message with updated circuit
+      // Forward the message as is, without additional processing
       await fetch(`http://localhost:${destination}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: remainingMessage,
-          circuit: lastCircuit  // Pass the circuit along
+          circuit: lastCircuit
         })
       });
 

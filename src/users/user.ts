@@ -69,29 +69,26 @@ export async function user(userId: number) {
         Array(3).fill(null).map(() => createRandomSymmetricKey())
       );
 
-      // Start with final destination (user)
       let finalDestination = `${String(BASE_USER_PORT + destinationUserId).padStart(10, '0')}`;
       let currentMessage = message;
 
-      // Build layers from last to first
       for (let i = circuit.length - 1; i >= 0; i--) {
         const symKey = symmetricKeys[i];
         const nodePublicKey = await importPubKey(selectedNodes[i].pubKey);
 
         const symKeyStr = await exportSymKey(symKey);
         const encryptedSymKey = await rsaEncrypt(symKeyStr, nodePublicKey);
-        const encryptedPayload = await symEncrypt(symKey, finalDestination + currentMessage);
+
+        const payload = finalDestination + currentMessage;
+        const encryptedPayload = await symEncrypt(symKey, payload);
 
         currentMessage = encryptedSymKey + encryptedPayload;
 
-        // Calculate next hop destination
         if (i > 0) {
-          // For intermediate nodes, next destination is the next node in circuit
           finalDestination = `${String(BASE_ONION_ROUTER_PORT + circuit[i]).padStart(10, '0')}`;
         }
       }
 
-      // Send to first node
       await fetch(`http://localhost:${BASE_ONION_ROUTER_PORT + circuit[0]}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +115,6 @@ export async function user(userId: number) {
 }
 
 function selectRandomNodes(nodes: Array<{ nodeId: number; pubKey: string }>, count: number) {
-  // Fisher-Yates shuffle implementation
   const array = [...nodes];
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

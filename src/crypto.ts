@@ -155,10 +155,13 @@ export async function symEncrypt(key: string | CryptoKey, data: string): Promise
     encoded
   );
 
-  return JSON.stringify({
-    iv: Buffer.from(iv).toString('base64'),
-    data: Buffer.from(encrypted).toString('base64')
-  });
+  // Combine IV and encrypted data into a single base64 string
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+
+  // Return a single base64 string
+  return Buffer.from(combined).toString('base64');
 }
 
 // Symmetric decryption
@@ -170,15 +173,20 @@ export async function symDecrypt(key: string | CryptoKey, encryptedData: string)
     cryptoKey = key;
   }
 
-  const { iv, data } = JSON.parse(encryptedData);
+  // Decode the combined data
+  const combined = Buffer.from(encryptedData, 'base64');
+
+  // Extract IV and encrypted data
+  const iv = combined.slice(0, 16);
+  const data = combined.slice(16);
 
   const decrypted = await webcrypto.subtle.decrypt(
     {
       name: "AES-CBC",
-      iv: Buffer.from(iv, 'base64')
+      iv
     },
     cryptoKey,
-    Buffer.from(data, 'base64')
+    data
   );
 
   return new TextDecoder().decode(decrypted);
